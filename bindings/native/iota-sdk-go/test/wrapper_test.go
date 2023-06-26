@@ -7,16 +7,8 @@ import (
 	"iota_sdk_go"
 )
 
-const ShimmerNetworkAPI = "https://api.shimmer.network"
-
 func TestFirstCon(t *testing.T) {
-	sdk := iota_sdk_go.NewIotaSDK()
-
-	success, err := sdk.InitLogger(iota_sdk_go.ILoggerConfig{
-		LevelFilter: iota_sdk_go.ILoggerConfigLevelFilterTrace,
-	})
-	require.True(t, success)
-	require.NoError(t, err)
+	sdk := InitTest(t)
 
 	clientPtr, err := sdk.CreateClient(iota_sdk_go.IClientOptions{
 		PrimaryNode: ShimmerNetworkAPI,

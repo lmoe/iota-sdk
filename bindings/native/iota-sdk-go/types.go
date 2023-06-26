@@ -70,6 +70,10 @@ func (j *AddressWithUnspentOutputs) UnmarshalJSON(b []byte) error {
 
 type CoinType float64
 
+var (
+	CoinTypeSMR CoinType = 4219
+	CoinTypeIOTA CoinType = 4218
+)
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *VerifySecp256K1EcdsaSignatureMethod) UnmarshalJSON(b []byte) error {
@@ -11166,7 +11170,7 @@ type WalletOptions struct {
 	ClientOptions *IClientOptions `json:"clientOptions,omitempty" yaml:"clientOptions,omitempty" mapstructure:"clientOptions,omitempty"`
 
 	// CoinType corresponds to the JSON schema field "coinType".
-	CoinType *CoinType `json:"coinType,omitempty" yaml:"coinType,omitempty" mapstructure:"coinType,omitempty"`
+	CoinType CoinType `json:"coinType,omitempty" yaml:"coinType,omitempty" mapstructure:"coinType,omitempty"`
 
 	// SecretManager corresponds to the JSON schema field "secretManager".
 	SecretManager WalletOptionsSecretManager `json:"secretManager,omitempty" yaml:"secretManager,omitempty" mapstructure:"secretManager,omitempty"`
