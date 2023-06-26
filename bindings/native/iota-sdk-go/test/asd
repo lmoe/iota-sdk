@@ -1,0 +1,10 @@
+2023-06-26 20:29:24 (UTC) iota_sdk::client::node_manager::syncing    DEBUG sync_nodes
+2023-06-26 20:29:24 (UTC) reqwest::connect                           DEBUG starting new connection: https://api.shimmer.network/
+2023-06-26 20:29:24 (UTC) rustls::client::hs                         DEBUG No cached session for DnsName("api.shimmer.network")
+2023-06-26 20:29:24 (UTC) rustls::client::hs                         DEBUG Not resuming any session
+2023-06-26 20:29:24 (UTC) rustls::client::hs                         DEBUG Using ciphersuite TLS13_AES_256_GCM_SHA384
+2023-06-26 20:29:24 (UTC) rustls::client::tls13                      DEBUG Not resuming
+2023-06-26 20:29:24 (UTC) rustls::client::tls13                      DEBUG TLS1.3 encrypted extensions: [ServerNameAck, Protocols([ProtocolName(6832)])]
+2023-06-26 20:29:24 (UTC) rustls::client::hs                         DEBUG ALPN protocol is Some(b"h2")
+2023-06-26 20:29:24 (UTC) iota_sdk::client::node_manager::http_client DEBUG GET: 72 ms for 200 OK https://api.shimmer.network/api/core/v2/info
+2023-06-26 20:29:24 (UTC) rustls::common_state                       DEBUG Sending warning alert CloseNotify
