@@ -2,19 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use core::convert::{From, Infallible};
+use std::cell::RefCell;
 use std::ffi::{c_char, CString};
 use std::ptr;
-use std::cell::RefCell;
 
-/// The `Result` structure to wrap the error type for python binding.
 pub(crate) type Result<T> = std::result::Result<T, Error>;
 
-
-
-/// The Error type.
 #[derive(Debug)]
 pub struct Error {
-    /// The error exposed to python.
     pub error: String,
 }
 

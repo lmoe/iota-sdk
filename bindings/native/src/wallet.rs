@@ -1,9 +1,9 @@
 // Copyright 2023 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{ffi::c_void, sync::Arc};
 use std::ffi::{c_char, CStr, CString};
 use std::ptr::null;
+use std::sync::Arc;
 
 use iota_sdk_bindings_core::{
     call_wallet_method as rust_call_wallet_method,
@@ -11,20 +11,18 @@ use iota_sdk_bindings_core::{
     Response, WalletMethod, WalletOptions,
 };
 use tokio::sync::RwLock;
-use iota_sdk_bindings_core::iota_sdk::types::block::ConvertTo;
 
+use crate::error::set_last_error;
 use crate::{
     client::Client,
     error::{Error, Result},
     SecretManager,
 };
-use crate::error::set_last_error;
 
 pub struct Wallet {
     pub wallet: Arc<RwLock<Option<RustWallet>>>,
 }
 
-/// Destroys the wallet instance.
 unsafe fn internal_destroy_wallet(wallet_ptr: *mut Wallet) -> Result<()> {
     let wallet = {
         assert!(!wallet_ptr.is_null());
@@ -40,17 +38,14 @@ unsafe fn internal_destroy_wallet(wallet_ptr: *mut Wallet) -> Result<()> {
 #[no_mangle]
 pub unsafe extern "C" fn destroy_wallet(wallet_ptr: *mut Wallet) -> bool {
     match internal_destroy_wallet(wallet_ptr) {
-        Ok(v) => true,
-        Err(e) => { set_last_error(e); false }
+        Ok(_) => true,
+        Err(e) => {
+            set_last_error(e);
+            false
+        }
     }
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn GO_EXPORT() {
-
-}
-
-/// Create wallet handler for python-side usage.
 unsafe fn internal_create_wallet(options_ptr: *const c_char) -> Result<*mut Wallet> {
     let options_string = CStr::from_ptr(options_ptr).to_str().unwrap();
 
@@ -70,13 +65,14 @@ unsafe fn internal_create_wallet(options_ptr: *const c_char) -> Result<*mut Wall
 pub unsafe extern "C" fn create_wallet(options_ptr: *const c_char) -> *const Wallet {
     match internal_create_wallet(options_ptr) {
         Ok(v) => v,
-        Err(e) => { set_last_error(e); null() }
+        Err(e) => {
+            set_last_error(e);
+            null()
+        }
     }
 }
 
-/// Call a wallet method.
 unsafe fn internal_call_wallet_method(wallet_ptr: *mut Wallet, method_ptr: *const c_char) -> Result<*const c_char> {
-
     log::debug!("[Rust] internal_call_wallet_method");
 
     let wallet = {
@@ -86,7 +82,6 @@ unsafe fn internal_call_wallet_method(wallet_ptr: *mut Wallet, method_ptr: *cons
 
     log::debug!("[Rust] internal_call_wallet_method after wallet pointer");
 
-
     let method_string = CStr::from_ptr(method_ptr).to_str().unwrap();
 
     log::debug!("{}, {}", "[Rust] got method string", method_string);
@@ -94,7 +89,6 @@ unsafe fn internal_call_wallet_method(wallet_ptr: *mut Wallet, method_ptr: *cons
     let method = serde_json::from_str::<WalletMethod>(&method_string)?;
 
     log::debug!("{}", "[Rust] parsed JSON");
-
 
     let response = crate::block_on(async {
         match wallet.wallet.read().await.as_ref() {
@@ -109,16 +103,17 @@ unsafe fn internal_call_wallet_method(wallet_ptr: *mut Wallet, method_ptr: *cons
     Ok(s.into_raw())
 }
 
-
 #[no_mangle]
-pub unsafe extern "C" fn call_wallet_method(wallet_ptr: *mut Wallet, method_ptr: *const c_char) -> *const c_char  {
+pub unsafe extern "C" fn call_wallet_method(wallet_ptr: *mut Wallet, method_ptr: *const c_char) -> *const c_char {
     match internal_call_wallet_method(wallet_ptr, method_ptr) {
         Ok(v) => v,
-        Err(e) => { set_last_error(e); null() }
+        Err(e) => {
+            set_last_error(e);
+            null()
+        }
     }
 }
 
-/// Listen to wallet events.
 unsafe fn internal_listen_wallet(wallet_ptr: *mut Wallet, events: Vec<String>, handler: extern "C" fn()) {
     let wallet = {
         assert!(!wallet_ptr.is_null());
@@ -155,7 +150,6 @@ pub unsafe extern "C" fn listen_wallet(wallet_ptr: *mut Wallet, events: Vec<Stri
     true
 }
 
-/// Get the client from the wallet.
 unsafe fn internal_get_client_from_wallet(wallet_ptr: *mut Wallet) -> Result<*const Client> {
     let wallet = {
         assert!(!wallet_ptr.is_null());
@@ -188,11 +182,13 @@ unsafe fn internal_get_client_from_wallet(wallet_ptr: *mut Wallet) -> Result<*co
 pub unsafe extern "C" fn get_client_from_wallet(wallet_ptr: *mut Wallet) -> *const Client {
     match internal_get_client_from_wallet(wallet_ptr) {
         Ok(v) => v,
-        Err(e) => { set_last_error(e); null() }
+        Err(e) => {
+            set_last_error(e);
+            null()
+        }
     }
 }
 
-/// Get the secret manager from the wallet.
 unsafe fn internal_get_secret_manager_from_wallet(wallet_ptr: *mut Wallet) -> Result<*const SecretManager> {
     let wallet = {
         assert!(!wallet_ptr.is_null());
@@ -225,6 +221,9 @@ unsafe fn internal_get_secret_manager_from_wallet(wallet_ptr: *mut Wallet) -> Re
 pub unsafe extern "C" fn get_secret_manager_from_wallet(wallet_ptr: *mut Wallet) -> *const SecretManager {
     match internal_get_secret_manager_from_wallet(wallet_ptr) {
         Ok(v) => v,
-        Err(e) => { set_last_error(e); null() }
+        Err(e) => {
+            set_last_error(e);
+            null()
+        }
     }
 }

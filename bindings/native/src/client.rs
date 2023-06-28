@@ -1,7 +1,7 @@
 // Copyright 2023 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use std::ffi::{c_char, c_uint, c_ulong, CStr, CString};
+use std::ffi::{c_char, CStr, CString};
 use std::ptr::null;
 
 use iota_sdk_bindings_core::{
@@ -10,14 +10,13 @@ use iota_sdk_bindings_core::{
     ClientMethod,
 };
 
-use crate::error::{Result, set_last_error};
+use crate::error::{set_last_error, Result};
 
 #[repr(C)]
 pub struct Client {
     pub client: RustClient,
 }
 
-/// Create client for python-side usage.
 unsafe fn internal_create_client(options_ptr: *const c_char) -> Result<*const Client> {
     let options_string = CStr::from_ptr(options_ptr).to_str().unwrap();
     let runtime = tokio::runtime::Runtime::new()?;
@@ -40,7 +39,10 @@ unsafe fn internal_create_client(options_ptr: *const c_char) -> Result<*const Cl
 pub unsafe extern "C" fn create_client(options_ptr: *const c_char) -> *const Client {
     match internal_create_client(options_ptr) {
         Ok(v) => v,
-        Err(e) => { set_last_error(e); null() }
+        Err(e) => {
+            set_last_error(e);
+            null()
+        }
     }
 }
 
@@ -61,17 +63,20 @@ unsafe fn internal_destroy_client(client_ptr: *mut Client) -> Result<()> {
 #[no_mangle]
 pub unsafe extern "C" fn destroy_client(client_ptr: *mut Client) -> bool {
     match internal_destroy_client(client_ptr) {
-        Ok(v) => true,
-        Err(e) => { set_last_error(e); false }
+        Ok(_) => true,
+        Err(e) => {
+            set_last_error(e);
+            false
+        }
     }
 }
 
- unsafe fn internal_call_client_method(client_ptr: *mut Client, method_ptr: *mut c_char) -> Result<*const c_char> {
+unsafe fn internal_call_client_method(client_ptr: *mut Client, method_ptr: *mut c_char) -> Result<*const c_char> {
     let method_str = CStr::from_ptr(method_ptr).to_str().unwrap();
 
     let client = {
-         assert!(!client_ptr.is_null());
-         &mut *client_ptr
+        assert!(!client_ptr.is_null());
+        &mut *client_ptr
     };
 
     let method = serde_json::from_str::<ClientMethod>(&method_str)?;
@@ -87,6 +92,9 @@ pub unsafe extern "C" fn destroy_client(client_ptr: *mut Client) -> bool {
 pub unsafe extern "C" fn call_client_method(client_ptr: *mut Client, method_ptr: *mut c_char) -> *const c_char {
     match internal_call_client_method(client_ptr, method_ptr) {
         Ok(v) => v,
-        Err(e) => { set_last_error(e); null() }
+        Err(e) => {
+            set_last_error(e);
+            null()
+        }
     }
 }
