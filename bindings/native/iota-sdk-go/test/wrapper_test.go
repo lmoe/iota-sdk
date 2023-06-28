@@ -4,13 +4,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"iota_sdk_go"
+	"iota_sdk_go/types"
 )
 
 func TestFirstCon(t *testing.T) {
 	sdk := InitTest(t)
 
-	clientPtr, err := sdk.CreateClient(iota_sdk_go.IClientOptions{
+	clientPtr, err := sdk.CreateClient(types.IClientOptions{
 		PrimaryNode: ShimmerNetworkAPI,
 		Nodes:       []interface{}{ShimmerNetworkAPI},
 	})

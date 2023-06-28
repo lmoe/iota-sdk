@@ -30,7 +30,10 @@ unsafe fn internal_create_client(options_ptr: *const c_char) -> Result<*const Cl
         return ClientBuilder::new().from_json(&options_string)?.finish().await;
     })?;
 
-    Ok(&Client { client })
+    let client_wrap = Client { client };
+    let client_ptr = Box::into_raw(Box::new(client_wrap));
+
+    Ok(client_ptr)
 }
 
 #[no_mangle]

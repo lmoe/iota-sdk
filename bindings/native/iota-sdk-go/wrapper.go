@@ -8,6 +8,7 @@ import (
 	"runtime"
 
 	"github.com/ebitengine/purego"
+	"iota_sdk_go/types"
 )
 
 func getIOTASDKLibrary() string {
@@ -110,7 +111,7 @@ func (i *IOTASDK) GetLastError() error {
 	return errors.New(result)
 }
 
-func (i *IOTASDK) InitLogger(loggerConfig ILoggerConfig) (bool, error) {
+func (i *IOTASDK) InitLogger(loggerConfig types.ILoggerConfig) (bool, error) {
 	msg, err := serialize(loggerConfig)
 	if err != nil {
 		return false, err
@@ -123,7 +124,7 @@ func (i *IOTASDK) InitLogger(loggerConfig ILoggerConfig) (bool, error) {
 	return true, nil
 }
 
-func (i *IOTASDK) CreateClient(clientOptions IClientOptions) (clientPtr IotaClientPtr, err error) {
+func (i *IOTASDK) CreateClient(clientOptions types.IClientOptions) (clientPtr IotaClientPtr, err error) {
 	msg, err := serialize(clientOptions)
 	if err != nil {
 		return 0, err
@@ -136,20 +137,31 @@ func (i *IOTASDK) CreateClient(clientOptions IClientOptions) (clientPtr IotaClie
 	return clientPtr, nil
 }
 
-func (i *IOTASDK) CreateWallet(walletOptions WalletOptions) (walletPtr IotaWalletPtr, err error) {
+func (i *IOTASDK) CreateWallet(walletOptions types.WalletOptions) (wallet *Wallet, err error) {
 	msg, err := serialize(walletOptions)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
+	walletPtr := IotaWalletPtr(0)
 	if walletPtr = i.lib_createWallet(msg); walletPtr == 0 {
-		return 0, i.GetLastError()
+		return nil, i.GetLastError()
 	}
 
-	return walletPtr, nil
+	clientPtr, err := i.GetClientFromWallet(walletPtr)
+	if err != nil {
+		return nil, err
+	}
+
+	secretManagerPtr, err := i.GetSecretManagerFromWallet(walletPtr)
+	if err != nil {
+		return nil, err
+	}
+	
+	return NewWallet(i, walletPtr, clientPtr, secretManagerPtr), nil
 }
 
-func (i *IOTASDK) CreateSecretManager(secretManagerOptions WalletOptionsSecretManager) (clientPtr IotaSecretManagerPtr, err error) {
+func (i *IOTASDK) CreateSecretManager(secretManagerOptions types.WalletOptionsSecretManager) (clientPtr IotaSecretManagerPtr, err error) {
 	msg, err := serialize(secretManagerOptions)
 	if err != nil {
 		return 0, err
@@ -215,4 +227,51 @@ func (i *IOTASDK) CallSecretManagerMethod(iotaSecretManagerPtr IotaSecretManager
 	}
 
 	return response, nil
+}
+
+func (i *IOTASDK) DestroyClient(client IotaClientPtr) (err error) {
+	if success := i.lib_destroyClient(client); !success {
+		return i.GetLastError()
+	}
+
+	return nil
+}
+
+func (i *IOTASDK) DestroyWallet(client IotaWalletPtr) (err error) {
+	if success := i.lib_destroyWallet(client); !success {
+		return i.GetLastError()
+	}
+
+	return nil
+}
+
+func (i *IOTASDK) DestroySecretManager(client IotaSecretManagerPtr) (err error) {
+	if success := i.lib_destroySecretManager(client); !success {
+		return i.GetLastError()
+	}
+
+	return nil
+}
+
+type ResponseEnvelope struct {
+	Type    string          `json:"type"`
+	Payload json.RawMessage `json:"payload"`
+}
+
+func ParseResponse[T any](responseString string, err error) (*T, error) {
+	if err != nil {
+		return nil, err
+	}
+
+	responseEnvelope := ResponseEnvelope{}
+	if err = json.Unmarshal([]byte(responseString), &responseEnvelope); err != nil {
+		return nil, err
+	}
+
+	response := new(T)
+	if err = json.Unmarshal(responseEnvelope.Payload, response); err != nil {
+		return nil, err
+	}
+
+	return response, err
 }

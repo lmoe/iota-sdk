@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"iota_sdk_go"
+	"iota_sdk_go/types"
 )
 
 const ShimmerNetworkAPI = "https://api.shimmer.network"
@@ -16,8 +17,8 @@ const TestMnemonic = "saddle dune lake festival gain race cancel fragile amused 
 func InitTest(t *testing.T) *iota_sdk_go.IOTASDK {
 	sdk := iota_sdk_go.NewIotaSDK()
 
-	success, err := sdk.InitLogger(iota_sdk_go.ILoggerConfig{
-		LevelFilter: iota_sdk_go.ILoggerConfigLevelFilterTrace,
+	success, err := sdk.InitLogger(types.ILoggerConfig{
+		LevelFilter: types.ILoggerConfigLevelFilterTrace,
 	})
 	require.True(t, success)
 	require.NoError(t, err)

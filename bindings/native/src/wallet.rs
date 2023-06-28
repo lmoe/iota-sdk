@@ -51,17 +51,17 @@ pub unsafe extern "C" fn GO_EXPORT() {
 }
 
 /// Create wallet handler for python-side usage.
-unsafe fn internal_create_wallet(options_ptr: *const c_char) -> Result<*const Wallet> {
+unsafe fn internal_create_wallet(options_ptr: *const c_char) -> Result<*mut Wallet> {
     let options_string = CStr::from_ptr(options_ptr).to_str().unwrap();
 
     let wallet_options = serde_json::from_str::<WalletOptions>(options_string)?;
     let wallet = crate::block_on(async { wallet_options.build().await })?;
 
-    let wallet_ptr = &Wallet {
+    let wallet_wrap = Wallet {
         wallet: Arc::new(RwLock::new(Some(wallet))),
     };
 
-    std::mem::forget(wallet_ptr);
+    let wallet_ptr = Box::into_raw(Box::new(wallet_wrap));
 
     Ok(wallet_ptr)
 }
@@ -76,14 +76,26 @@ pub unsafe extern "C" fn create_wallet(options_ptr: *const c_char) -> *const Wal
 
 /// Call a wallet method.
 unsafe fn internal_call_wallet_method(wallet_ptr: *mut Wallet, method_ptr: *const c_char) -> Result<*const c_char> {
+
+    log::debug!("[Rust] internal_call_wallet_method");
+
     let wallet = {
         assert!(!wallet_ptr.is_null());
         &mut *wallet_ptr
     };
 
+    log::debug!("[Rust] internal_call_wallet_method after wallet pointer");
+
+
     let method_string = CStr::from_ptr(method_ptr).to_str().unwrap();
 
+    log::debug!("{}, {}", "[Rust] got method string", method_string);
+
     let method = serde_json::from_str::<WalletMethod>(&method_string)?;
+
+    log::debug!("{}", "[Rust] parsed JSON");
+
+
     let response = crate::block_on(async {
         match wallet.wallet.read().await.as_ref() {
             Some(wallet) => rust_call_wallet_method(wallet, method).await,
@@ -166,8 +178,8 @@ unsafe fn internal_get_client_from_wallet(wallet_ptr: *mut Wallet) -> Result<*co
             })
     })?;
 
-    let client_ptr = &Client { client };
-    std::mem::forget(client_ptr);
+    let client_wrap = Client { client };
+    let client_ptr = Box::into_raw(Box::new(client_wrap));
 
     Ok(client_ptr)
 }
@@ -203,8 +215,8 @@ unsafe fn internal_get_secret_manager_from_wallet(wallet_ptr: *mut Wallet) -> Re
             })
     })?;
 
-    let secret_manager_ptr = &SecretManager { secret_manager };
-    std::mem::forget(secret_manager_ptr);
+    let secret_manager_wrap = SecretManager { secret_manager };
+    let secret_manager_ptr = Box::into_raw(Box::new(secret_manager_wrap));
 
     Ok(secret_manager_ptr)
 }

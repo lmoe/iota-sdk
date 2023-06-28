@@ -32,9 +32,13 @@ unsafe fn internal_create_secret_manager(options: *const c_char) -> Result<*cons
     let secret_manager_dto = serde_json::from_str::<SecretManagerDto>(options_string.to_str().unwrap())?;
     let secret_manager = RustSecretManager::try_from(secret_manager_dto)?;
 
-    Ok(&SecretManager {
+    let secret_manager_wrap = SecretManager {
         secret_manager: Arc::new(RwLock::new(secret_manager)),
-    })
+    };
+
+    let secret_manager_ptr = Box::into_raw(Box::new(secret_manager_wrap));
+
+    Ok(secret_manager_ptr)
 }
 
 #[no_mangle]
