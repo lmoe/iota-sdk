@@ -12,7 +12,6 @@ use iota_sdk_bindings_core::{
 
 use crate::error::{set_last_error, Result};
 
-#[repr(C)]
 pub struct Client {
     pub client: RustClient,
 }

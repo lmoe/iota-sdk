@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"iota_sdk_go"
+	"iota_sdk_go/methods"
 	"iota_sdk_go/types"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -32,7 +33,7 @@ func TestWalletMnemonic(t *testing.T) {
 }
 
 func GetLedgerStatus(t *testing.T, sdk *iota_sdk_go.IOTASDK, walletPtr iota_sdk_go.IotaWalletPtr) *types.LedgerNanoStatus {
-	ledgerNanoStatus, err := sdk.CallWalletMethod(walletPtr, types.GetLedgerNanoStatusMethod())
+	ledgerNanoStatus, err := sdk.CallWalletMethod(walletPtr, methods.GetLedgerNanoStatusMethod())
 	require.NoError(t, err)
 
 	status, err := iota_sdk_go.ParseResponse[types.LedgerNanoStatus](ledgerNanoStatus, err)
@@ -43,7 +44,7 @@ func GetLedgerStatus(t *testing.T, sdk *iota_sdk_go.IOTASDK, walletPtr iota_sdk_
 }
 
 func CreateAddressLedger(t *testing.T, sdk *iota_sdk_go.IOTASDK, walletPtr iota_sdk_go.IotaWalletPtr) *string {
-	ledgerNanoStatus, err := sdk.CallWalletMethod(walletPtr, types.GenerateEd25519AddressMethod(types.GenerateEd25519AddressMethodData{
+	ledgerNanoStatus, err := sdk.CallWalletMethod(walletPtr, methods.GenerateEd25519AddressMethod(types.GenerateEd25519AddressMethodData{
 		AddressIndex: 0,
 		AccountIndex: 0,
 		Bech32Hrp:    "SMR",
@@ -61,7 +62,7 @@ func CreateAddressLedger(t *testing.T, sdk *iota_sdk_go.IOTASDK, walletPtr iota_
 }
 
 func SignTransactionLedger(t *testing.T, sdk *iota_sdk_go.IOTASDK, walletPtr iota_sdk_go.IotaWalletPtr) *string {
-	ledgerNanoStatus, err := sdk.CallWalletMethod(walletPtr, types.GenerateEd25519AddressMethod(types.GenerateEd25519AddressMethodData{
+	ledgerNanoStatus, err := sdk.CallWalletMethod(walletPtr, methods.GenerateEd25519AddressMethod(types.GenerateEd25519AddressMethodData{
 		AddressIndex: 0,
 		AccountIndex: 0,
 		Bech32Hrp:    "SMR",

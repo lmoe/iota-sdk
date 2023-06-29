@@ -62,6 +62,7 @@ type IOTASDK struct {
 	lib_destroyClient        func(ptr IotaClientPtr) bool
 	lib_destroyWallet        func(ptr IotaWalletPtr) bool
 	lib_destroySecretManager func(ptr IotaSecretManagerPtr) bool
+	lib_destroyString        func(ptr *string) bool
 
 	lib_callClientMethod        func(IotaClientPtr, string) string
 	lib_callWalletMethod        func(IotaWalletPtr, string) string
@@ -89,6 +90,7 @@ func NewIotaSDK() *IOTASDK {
 	purego.RegisterLibFunc(&iotaSDKStruct.lib_destroyClient, iotaSDK, "destroy_client")
 	purego.RegisterLibFunc(&iotaSDKStruct.lib_destroyWallet, iotaSDK, "destroy_wallet")
 	purego.RegisterLibFunc(&iotaSDKStruct.lib_destroySecretManager, iotaSDK, "destroy_secret_manager")
+	purego.RegisterLibFunc(&iotaSDKStruct.lib_destroyString, iotaSDK, "destroy_string")
 
 	purego.RegisterLibFunc(&iotaSDKStruct.lib_callClientMethod, iotaSDK, "call_client_method")
 	purego.RegisterLibFunc(&iotaSDKStruct.lib_callWalletMethod, iotaSDK, "call_wallet_method")
@@ -157,7 +159,7 @@ func (i *IOTASDK) CreateWallet(walletOptions types.WalletOptions) (wallet *Walle
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return NewWallet(i, walletPtr, clientPtr, secretManagerPtr), nil
 }
 

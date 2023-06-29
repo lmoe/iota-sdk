@@ -3,6 +3,7 @@ package iota_sdk_go
 import (
 	"encoding/json"
 
+	"iota_sdk_go/methods"
 	"iota_sdk_go/types"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
@@ -30,7 +31,7 @@ func (w *Wallet) Destroy() error {
 }
 
 func (w *Wallet) GetLedgerStatus() (*types.LedgerNanoStatus, error) {
-	ledgerNanoStatus, err := w.sdk.CallWalletMethod(w.walletPtr, types.GetLedgerNanoStatusMethod())
+	ledgerNanoStatus, err := w.sdk.CallWalletMethod(w.walletPtr, methods.GetLedgerNanoStatusMethod())
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +45,7 @@ func (w *Wallet) GetLedgerStatus() (*types.LedgerNanoStatus, error) {
 }
 
 func (w *Wallet) GenerateEd25519Address(addressIndex float64, accountIndex float64, bech32Hrp string, options *types.GenerateAddressOptions) (string, error) {
-	ledgerNanoStatus, err := w.sdk.CallWalletMethod(w.walletPtr, types.GenerateEd25519AddressMethod(types.GenerateEd25519AddressMethodData{
+	ledgerNanoStatus, err := w.sdk.CallWalletMethod(w.walletPtr, methods.GenerateEd25519AddressMethod(types.GenerateEd25519AddressMethodData{
 		AddressIndex: addressIndex,
 		AccountIndex: accountIndex,
 		Bech32Hrp:    bech32Hrp,
@@ -108,7 +109,7 @@ func buildBip32Chain(coinType types.CoinType, accountIndex uint32, internalAddre
 func (w *Wallet) SignTransactionEssence(txEssence types.HexEncodedString, accountIndex uint32, addressIndex uint32) (*types.Ed25519Signature, error) {
 	bip32Chain := buildBip32Chain(types.CoinTypeSMR, accountIndex, false, addressIndex)
 
-	signedMessageStr, err := w.sdk.CallSecretManagerMethod(w.secretManagerPtr, types.SignEd25519Method(types.SignEd25519MethodData{
+	signedMessageStr, err := w.sdk.CallSecretManagerMethod(w.secretManagerPtr, methods.SignEd25519Method(types.SignEd25519MethodData{
 		Message: txEssence,
 		Chain:   bip32Chain,
 	}))
@@ -125,7 +126,7 @@ func (w *Wallet) SignTransactionEssence(txEssence types.HexEncodedString, accoun
 }
 
 func (w *Wallet) SignTransaction(transaction types.PreparedTransactionData) (any, error) {
-	_, err := w.sdk.CallSecretManagerMethod(w.secretManagerPtr, types.SignTransactionMethod(types.SignTransactionMethodData{
+	_, err := w.sdk.CallSecretManagerMethod(w.secretManagerPtr, methods.SignTransactionMethod(types.SignTransactionMethodData{
 		SecretManager: types.LedgerNanoSecretManager{
 			LedgerNano: false,
 		},

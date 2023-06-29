@@ -29,6 +29,26 @@ pub(crate) fn block_on<C: futures::Future>(cb: C) -> C::Output {
     runtime.lock().unwrap().block_on(cb)
 }
 
+unsafe fn internal_destroy_string(ptr: *mut c_char) -> Result<()> {
+    if ptr.is_null() {
+        return Ok(());
+    }
+
+    let _ = CString::from_raw(ptr);
+    Ok(())
+}
+
+#[no_mangle]
+unsafe extern "C" fn destroy_string(ptr: *mut c_char) -> bool {
+    match internal_destroy_string(ptr) {
+        Ok(_) => true,
+        Err(e) => {
+            set_last_error(e);
+            false
+        }
+    }
+}
+
 /// Init the Rust logger.
 unsafe fn internal_init_logger(config_ptr: *const c_char) -> Result<()> {
     let method_str = CStr::from_ptr(config_ptr).to_str().unwrap();

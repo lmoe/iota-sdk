@@ -1,4 +1,4 @@
-package types
+package methods
 
 type NoType any
 
