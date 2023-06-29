@@ -255,6 +255,15 @@ func (i *IOTASDK) DestroySecretManager(client IotaSecretManagerPtr) (err error) 
 	return nil
 }
 
+type JsonErrorResponse struct {
+	Type         string `json:"type"`
+	ErrorMessage string `json:"error"`
+}
+
+func (j *JsonErrorResponse) Error() string {
+	return j.ErrorMessage
+}
+
 type ResponseEnvelope struct {
 	Type    string          `json:"type"`
 	Payload json.RawMessage `json:"payload"`
@@ -268,6 +277,16 @@ func ParseResponse[T any](responseString string, err error) (*T, error) {
 	responseEnvelope := ResponseEnvelope{}
 	if err = json.Unmarshal([]byte(responseString), &responseEnvelope); err != nil {
 		return nil, err
+	}
+
+	if responseEnvelope.Type == "error" {
+		var errorResponse JsonErrorResponse
+
+		if err = json.Unmarshal(responseEnvelope.Payload, &errorResponse); err != nil {
+			return nil, err
+		}
+
+		return nil, &errorResponse
 	}
 
 	response := new(T)

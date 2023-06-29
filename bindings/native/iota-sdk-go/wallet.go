@@ -1,13 +1,8 @@
 package iota_sdk_go
 
 import (
-	"encoding/json"
-
 	"iota_sdk_go/methods"
 	"iota_sdk_go/types"
-
-	"github.com/iotaledger/hive.go/serializer/v2"
-	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 type Wallet struct {
@@ -63,34 +58,7 @@ func (w *Wallet) GenerateEd25519Address(addressIndex float64, accountIndex float
 	return *address, nil
 }
 
-func TranslateIotaGoTransaction(transaction iotago.Transaction) *types.PreparedTransactionData {
-	inputs := make([]types.InputSigningData, 0)
-
-	for _, input := range transaction.Essence.Outputs {
-		var signData types.InputSigningData = types.InputSigningData{}
-
-		b, _ := input.MarshalJSON()
-		json.Unmarshal(b, &signData.Output)
-		inputs = append(inputs, signData)
-	}
-
-	signingBytes, err := transaction.Essence.Serialize(serializer.DeSeriModeNoValidation, nil)
-	if err != nil {
-		panic(err)
-	}
-	//signingMsg, err := transaction.Essence.SigningMessage()
-
-	signedHex := iotago.EncodeHex(signingBytes)
-
-	transactionData := types.PreparedTransactionData{
-		Essence:    types.NewRegularTransactionEssence("", signedHex),
-		InputsData: inputs,
-	}
-
-	return &transactionData
-}
-
-func buildBip32Chain(coinType types.CoinType, accountIndex uint32, internalAddress bool, addressIndex uint32) types.IBip32Chain {
+func BuildBip32Chain(coinType types.CoinType, accountIndex uint32, internalAddress bool, addressIndex uint32) types.IBip32Chain {
 	var internalAddressInt uint32 = 0
 
 	if internalAddress {
@@ -106,9 +74,7 @@ func buildBip32Chain(coinType types.CoinType, accountIndex uint32, internalAddre
 	}
 }
 
-func (w *Wallet) SignTransactionEssence(txEssence types.HexEncodedString, accountIndex uint32, addressIndex uint32) (*types.Ed25519Signature, error) {
-	bip32Chain := buildBip32Chain(types.CoinTypeSMR, accountIndex, false, addressIndex)
-
+func (w *Wallet) SignTransactionEssence(txEssence types.HexEncodedString, bip32Chain types.IBip32Chain) (*types.Ed25519Signature, error) {
 	signedMessageStr, err := w.sdk.CallSecretManagerMethod(w.secretManagerPtr, methods.SignEd25519Method(types.SignEd25519MethodData{
 		Message: txEssence,
 		Chain:   bip32Chain,
@@ -117,24 +83,5 @@ func (w *Wallet) SignTransactionEssence(txEssence types.HexEncodedString, accoun
 		return nil, err
 	}
 
-	var signature types.Ed25519Signature
-	if err = json.Unmarshal([]byte(signedMessageStr), &signature); err != nil {
-		return nil, err
-	}
-
-	return &signature, nil
-}
-
-func (w *Wallet) SignTransaction(transaction types.PreparedTransactionData) (any, error) {
-	_, err := w.sdk.CallSecretManagerMethod(w.secretManagerPtr, methods.SignTransactionMethod(types.SignTransactionMethodData{
-		SecretManager: types.LedgerNanoSecretManager{
-			LedgerNano: false,
-		},
-		PreparedTransactionData: transaction,
-	}))
-	if err != nil {
-		return "", err
-	}
-
-	return nil, nil
+	return ParseResponse[types.Ed25519Signature](signedMessageStr, err)
 }
