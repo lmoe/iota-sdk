@@ -4,6 +4,7 @@
 use std::ffi::{c_char, CStr, CString};
 use std::ptr::null;
 use std::sync::Arc;
+use log::debug;
 
 use iota_sdk_bindings_core::{
     call_wallet_method as rust_call_wallet_method,
@@ -114,22 +115,29 @@ pub unsafe extern "C" fn call_wallet_method(wallet_ptr: *mut Wallet, method_ptr:
     }
 }
 
-unsafe fn internal_listen_wallet(wallet_ptr: *mut Wallet, events: Vec<String>, handler: extern "C" fn()) {
+unsafe fn internal_listen_wallet(wallet_ptr: *mut Wallet, events_ptr: *const c_char, handler: extern fn(*const c_char)) -> Result<bool> {
     let wallet = {
         assert!(!wallet_ptr.is_null());
         &mut *wallet_ptr
     };
 
-    let mut rust_events = Vec::with_capacity(events.len());
+    let events_string = CStr::from_ptr(events_ptr).to_str().unwrap();
+    let rust_events= serde_json::from_str::<Vec<String>>(events_string);
 
-    for event in events {
+    if !rust_events.is_ok() {
+        return Ok(false);
+    }
+
+    let mut wallet_events: Vec<WalletEventType> = Vec::new();
+    for event in rust_events.unwrap() {
         let event = match serde_json::from_str::<WalletEventType>(&event) {
             Ok(event) => event,
             Err(e) => {
-                panic!("Wrong event to listen! {e:?}");
+                debug!("Wrong event to listen! {e:?}");
+                return Ok(false);
             }
         };
-        rust_events.push(event);
+        wallet_events.push(event);
     }
 
     crate::block_on(async {
@@ -139,15 +147,30 @@ unsafe fn internal_listen_wallet(wallet_ptr: *mut Wallet, events: Vec<String>, h
             .await
             .as_ref()
             .expect("wallet got destroyed")
-            .listen(rust_events, move |_| handler())
+            .listen(wallet_events, move |event_data| {
+                match serde_json::to_string(event_data) {
+                    Ok(event_str) => {
+                        let s = CString::new(event_str).unwrap();
+                        handler(s.into_raw())
+                    },
+                    _ => {}
+                }
+            })
             .await;
     });
+
+    Ok(true)
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn listen_wallet(wallet_ptr: *mut Wallet, events: Vec<String>, handler: extern "C" fn()) -> bool {
-    internal_listen_wallet(wallet_ptr, events, handler);
-    true
+pub unsafe extern "C" fn listen_wallet(wallet_ptr: *mut Wallet, events: *const c_char, handler: extern fn(*const c_char)) -> bool {
+    match internal_listen_wallet(wallet_ptr, events, handler) {
+        Ok(v) => v,
+        Err(e) => {
+            set_last_error(e);
+            false
+        }
+    }
 }
 
 unsafe fn internal_get_client_from_wallet(wallet_ptr: *mut Wallet) -> Result<*const Client> {
